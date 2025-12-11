@@ -1,5 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { Telegram } from "../lib/telegram";
+import { Telegram } from '../lib/telegram';
 
 const BOT_TOKEN = process.env.BOT_TOKEN!;
 const STOP_WORDS = (process.env.STOP_WORDS || "")
@@ -32,7 +31,7 @@ function containsStopword(text: string | undefined, entities: any[] | undefined)
   return false;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   const msg = req.body?.message;
   if (!msg) return res.status(200).end();
 

@@ -1,4 +1,3 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Telegram } from "../lib/telegram";
 
 const BOT_TOKEN = process.env.BOT_TOKEN!;
@@ -6,7 +5,7 @@ const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
 const tg = new Telegram(BOT_TOKEN);
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   const VERCEL_ENV = process.env.VERCEL_ENV;
   const VERCEL_URL = process.env.VERCEL_URL;
 
