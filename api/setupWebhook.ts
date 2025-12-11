@@ -2,45 +2,49 @@ import { Telegram } from "../lib/telegram";
 
 const BOT_TOKEN = process.env.BOT_TOKEN!;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+const SECRET_TOKEN = process.env.SETUP_WEBHOOK_SECRET;
+const VERCEL_ENV = process.env.VERCEL_ENV;
+const VERCEL_URL = process.env.VERCEL_URL;
 
-const tg = new Telegram(BOT_TOKEN);
+if (!BOT_TOKEN || !SECRET_TOKEN) {
+  console.error("BOT_TOKEN or SETUP_WEBHOOK_SECRET missing");
+  process.exit(1);
+}
 
-export default async function handler(req: any, res: any) {
-  const VERCEL_ENV = process.env.VERCEL_ENV;
-  const VERCEL_URL = process.env.VERCEL_URL;
-
+async function main() {
   if (VERCEL_ENV !== "production") {
-    return res.status(200).json({ ok: true, skipped: "not production env" });
+    console.log("Skipping webhook registration for non-production environment");
+    return;
   }
 
   if (!VERCEL_URL) {
-    if (ADMIN_CHAT_ID) {
-      await tg.sendMessage(+ADMIN_CHAT_ID, "Error: VERCEL_URL missing during webhook setup.");
-    }
-    return res.status(500).json({ error: "VERCEL_URL missing" });
+    console.error("VERCEL_URL missing");
+    return;
   }
 
-  const desiredUrl = `https://${VERCEL_URL}/api/webhook`;
+  const tg = new Telegram(BOT_TOKEN);
+  const webhookUrl = `https://${VERCEL_URL}/api/webhook`;
 
   try {
     const info = await tg.getWebhookInfo();
 
-    if (info.result?.url === desiredUrl) {
-      return res.status(200).json({ ok: true, unchanged: true });
+    if (info.result?.url === webhookUrl) {
+      console.log("Webhook already set correctly");
+      return;
     }
 
-    const r = await tg.setWebhook(desiredUrl);
+    const res = await tg.setWebhook(webhookUrl, SECRET_TOKEN);
+    console.log("Webhook registration response:", res);
 
-    if (!r.ok && ADMIN_CHAT_ID) {
-      await tg.sendMessage(+ADMIN_CHAT_ID, `Webhook registration failed: ${JSON.stringify(r)}`);
+    if (!res.ok && ADMIN_CHAT_ID) {
+      await tg.sendMessage(+ADMIN_CHAT_ID, `Webhook registration failed: ${JSON.stringify(res)}`);
     }
-
-    return res.status(200).json({ ok: true, updated: true, response: r });
   } catch (err) {
+    console.error("Error registering webhook:", err);
     if (ADMIN_CHAT_ID) {
       await tg.sendMessage(+ADMIN_CHAT_ID, `Webhook setup error: ${String(err)}`);
     }
-
-    return res.status(500).json({ error: String(err) });
   }
 }
+
+main();

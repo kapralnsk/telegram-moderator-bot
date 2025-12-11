@@ -5,36 +5,28 @@ export class Telegram {
     return `https://api.telegram.org/bot${this.token}/${method}`;
   }
 
-  async call(method: string, body: unknown) {
+  async call(method: string, body?: unknown) {
     const res = await fetch(this.base(method), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: body ? JSON.stringify(body) : undefined
     });
-
-    const json = await res.json();
-    return json;
+    return res.json();
   }
 
   deleteMessage(chatId: number, messageId: number) {
-    return this.call("deleteMessage", {
-      chat_id: chatId,
-      message_id: messageId
-    });
+    return this.call("deleteMessage", { chat_id: chatId, message_id: messageId });
   }
 
   sendMessage(chatId: number, text: string) {
-    return this.call("sendMessage", {
-      chat_id: chatId,
-      text
-    });
+    return this.call("sendMessage", { chat_id: chatId, text });
   }
 
   getWebhookInfo() {
-    return this.call("getWebhookInfo", {});
+    return this.call("getWebhookInfo");
   }
 
-  setWebhook(url: string) {
-    return this.call("setWebhook", { url });
+  setWebhook(url: string, secret_token?: string) {
+    return this.call("setWebhook", { url, secret_token });
   }
 }

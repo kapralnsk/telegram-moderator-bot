@@ -1,15 +1,14 @@
 {
   "name": "telegram-moderator-vercel",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/registerWebhook.js",
     "dev": "vercel dev"
   },
-  "dependencies": {
-    "@types/node": "^20.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.2.0",
+    "@types/node": "^20.5.0"
   }
 }
