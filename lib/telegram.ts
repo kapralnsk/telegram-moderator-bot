@@ -1,18 +1,16 @@
-// lib/telegram.ts
-
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 if (!BOT_TOKEN) {
   throw new Error("TELEGRAM_BOT_TOKEN is not set");
 }
 
-const TELEGRAM_API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-export async function telegramApiCall<T = any>(
+export async function telegramApiCall(
   method: string,
   payload: Record<string, unknown>
-): Promise<T> {
-  const res = await fetch(`${TELEGRAM_API_BASE}/${method}`, {
+) {
+  const response = await fetch(`${API_BASE}/${method}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -20,7 +18,7 @@ export async function telegramApiCall<T = any>(
     body: JSON.stringify(payload),
   });
 
-  const data = await res.json();
+  const data = await response.json();
 
   if (!data.ok) {
     console.error("Telegram API error", {
@@ -28,8 +26,7 @@ export async function telegramApiCall<T = any>(
       payload,
       response: data,
     });
-    throw new Error(`Telegram API error: ${data.description}`);
   }
 
-  return data.result;
+  return data;
 }

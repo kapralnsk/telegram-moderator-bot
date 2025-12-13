@@ -1,13 +1,13 @@
 import { Telegram } from "../lib/telegram";
 
-const BOT_TOKEN = process.env.BOT_TOKEN!;
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
-const SECRET_TOKEN = process.env.SETUP_WEBHOOK_SECRET;
+const SECRET_TOKEN = process.env.TELEGRAM_WEBHOOK_SECRET;
 const VERCEL_ENV = process.env.VERCEL_ENV;
 const VERCEL_URL = process.env.VERCEL_URL;
 
 if (!BOT_TOKEN || !SECRET_TOKEN) {
-  console.error("BOT_TOKEN or SETUP_WEBHOOK_SECRET missing");
+  console.error("TELEGRAM_BOT_TOKEN or TELEGRAM_WEBHOOK_SECRET missing");
   process.exit(1);
 }
 
