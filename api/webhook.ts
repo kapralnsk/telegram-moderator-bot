@@ -1,50 +1,48 @@
-import { Telegram } from "../lib/telegram";
+// api/webhook.ts
+import { telegramApiCall } from "../lib/telegram";
 
-const BOT_TOKEN = process.env.BOT_TOKEN!;
-const STOP_WORDS = (process.env.STOP_WORDS || "").split(",").map(s => s.trim().toLowerCase());
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
-const SECRET_TOKEN = process.env.SETUP_WEBHOOK_SECRET;
+const SECRET_TOKEN = process.env.TELEGRAM_WEBHOOK_SECRET;
+const TARGET_INLINE_BOT_USERNAME = process.env.TARGET_INLINE_BOT_USERNAME;
 
-const tg = new Telegram(BOT_TOKEN);
-
-function containsStopword(text: string | undefined, entities: any[] | undefined) {
-  if (!text) return false;
-  const lower = text.toLowerCase();
-
-  for (const w of STOP_WORDS) {
-    if (w && lower.includes(w)) return true;
-  }
-
-  if (entities) {
-    for (const e of entities) {
-      if (e.type === "text_mention" && e.user?.username) {
-        const username = "@" + e.user.username.toLowerCase();
-        if (STOP_WORDS.includes(username)) return true;
-      }
-    }
-  }
-
-  return false;
+if (!SECRET_TOKEN) {
+  throw new Error("TELEGRAM_WEBHOOK_SECRET is not set");
 }
 
-export default async function handler(req: any, res: any) {
-  const token = req.headers["x-telegram-bot-api-secret-token"];
-  if (!token || token !== SECRET_TOKEN) return res.status(401).end();
+if (!TARGET_INLINE_BOT_USERNAME) {
+  throw new Error("TARGET_INLINE_BOT_USERNAME is not set");
+}
 
-  const msg = req.body?.message;
-  if (!msg) return res.status(200).end();
+export default async function handler(req: Request): Promise<Response> {
+  // 1. Authenticate request from Telegram
+  const incomingSecret = req.headers.get(
+    "x-telegram-bot-api-secret-token"
+  );
 
-  const text = msg.text || msg.caption;
-  const entities = msg.entities || msg.caption_entities;
-
-  try {
-    if (containsStopword(text, entities)) {
-      await tg.deleteMessage(msg.chat.id, msg.message_id);
-      if (ADMIN_CHAT_ID) await tg.sendMessage(+ADMIN_CHAT_ID, `Deleted: "${text}"`);
-    }
-  } catch (err) {
-    if (ADMIN_CHAT_ID) await tg.sendMessage(+ADMIN_CHAT_ID, `Error deleting message: ${String(err)}`);
+  if (incomingSecret !== SECRET_TOKEN) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
-  res.status(200).end();
+  // 2. Parse Telegram update
+  const update = await req.json();
+  const message = update?.message;
+
+  if (!message) {
+    return new Response("OK");
+  }
+
+  // 3. Detect messages sent via inline bot
+  const viaBotUsername = message.via_bot?.username;
+
+  if (
+    typeof viaBotUsername === "string" &&
+    viaBotUsername.toLowerCase() ===
+      TARGET_INLINE_BOT_USERNAME.toLowerCase()
+  ) {
+    await telegramApiCall("deleteMessage", {
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+    });
+  }
+
+  return new Response("OK");
 }

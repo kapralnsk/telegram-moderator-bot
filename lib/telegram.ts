@@ -1,32 +1,35 @@
-export class Telegram {
-  constructor(private token: string) {}
+// lib/telegram.ts
 
-  private base(method: string) {
-    return `https://api.telegram.org/bot${this.token}/${method}`;
-  }
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-  async call(method: string, body?: unknown) {
-    const res = await fetch(this.base(method), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined
+if (!BOT_TOKEN) {
+  throw new Error("TELEGRAM_BOT_TOKEN is not set");
+}
+
+const TELEGRAM_API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
+
+export async function telegramApiCall<T = any>(
+  method: string,
+  payload: Record<string, unknown>
+): Promise<T> {
+  const res = await fetch(`${TELEGRAM_API_BASE}/${method}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    console.error("Telegram API error", {
+      method,
+      payload,
+      response: data,
     });
-    return res.json();
+    throw new Error(`Telegram API error: ${data.description}`);
   }
 
-  deleteMessage(chatId: number, messageId: number) {
-    return this.call("deleteMessage", { chat_id: chatId, message_id: messageId });
-  }
-
-  sendMessage(chatId: number, text: string) {
-    return this.call("sendMessage", { chat_id: chatId, text });
-  }
-
-  getWebhookInfo() {
-    return this.call("getWebhookInfo");
-  }
-
-  setWebhook(url: string, secret_token?: string) {
-    return this.call("setWebhook", { url, secret_token });
-  }
+  return data.result;
 }
